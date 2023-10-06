@@ -2,65 +2,107 @@ import './App.css';
 import { useState } from 'react';
 
 function App() {
-  const [cardList, setCardList] = useState([
-    { id: 1, order: 3, text: 'Карточка 1' },
-    { id: 2, order: 1, text: 'Карточка 2' },
-    { id: 3, order: 2, text: 'Карточка 3' },
-    { id: 4, order: 4, text: 'Карточка 4' },
+  const [boards, setBoards] = useState([
+    {
+      id: 1,
+      title: 'Сделать',
+      items: [
+        { id: 1, title: 'Написать приложение' },
+        { id: 2, title: 'Сделать лендинг' },
+      ],
+    },
+    { id: 2, title: 'В процессе', items: [{ id: 3, title: 'Код ревью приложения' }] },
+    { id: 3, title: 'Сделано', items: [{ id: 4, title: 'Включить ПК' }] },
   ]);
 
-  const [currentCard, setCurrentCard] = useState(null);
+  const [currentBoard, setCurrentBoard] = useState(null);
+  const [currentItem, setCurrentItem] = useState(null);
 
-  function dragOverHandler(e, board, item) {
+  function dragOverHandler(e) {
     e.preventDefault();
-    e.target.style.background = 'lightgray';
+    if (e.target.className === 'item') {
+      e.target.style.boxShadow = '0 4px 3px gray';
+    }
   }
 
-  function dragStartHandler(e, card) {
-    console.log('drag', card);
-    setCurrentCard(card);
+  function dragLeaveHandler(e) {
+    e.target.style.boxShadow = 'none';
+  }
+
+  function dragStartHandler(e, board, item) {
+    setCurrentBoard(board);
+    setCurrentItem(item);
   }
 
   function dragEndHandler(e) {
-    e.target.style.background = 'white';
+    e.target.style.boxShadow = 'none';
   }
 
-  function dropHandler(e, card) {
-    e.preventDefault();
-    setCardList(
-      cardList.map((c) => {
-        if (c.id === card.id) {
-          return { ...c, order: currentCard.order };
+  function dropCardHandler(e, board) {
+    board.items.push(currentItem);
+    const currentIndex = currentBoard.items.indexOf(currentItem);
+    currentBoard.items.splice(currentIndex, 1);
+    setBoards(
+      boards.map((b) => {
+        if (b.id === board.id) {
+          return board;
         }
-        if (c.id === currentCard.id) {
-          return { ...c, order: card.order };
+        if (b.id === currentBoard.id) {
+          return currentBoard;
         }
-        return c;
+        return b;
       }),
     );
-    e.target.style.background = 'white';
+    e.target.style.boxShadow = 'none';
   }
 
-  const sortCards = (a, b) => {
-    if (a.order > b.order) {
-      return 1;
-    } else {
-      return -1;
-    }
-  };
+  function dropHandler(e, board, item) {
+    e.preventDefault();
+    const currentIndex = currentBoard.items.indexOf(currentItem);
+    currentBoard.items.splice(currentIndex, 1);
+    const dropIndex = board.items.indexOf(item);
+    board.items.splice(dropIndex + 1, 0, currentItem);
+    setBoards(
+      boards.map((b) => {
+        if (b.id === board.id) {
+          return board;
+        }
+        if (b.id === currentBoard.id) {
+          return currentBoard;
+        }
+        return b;
+      }),
+    );
+  }
 
   return (
     <div className="app">
-      {cardList.sort(sortCards).map((card) => (
+      {boards.map((board) => (
         <div
-          onDragStart={(e) => dragStartHandler(e, card)}
-          onDragLeave={(e) => dragEndHandler(e)}
-          onDragEnd={(e) => dragEndHandler(e)}
+          className="board"
           onDragOver={(e) => dragOverHandler(e)}
-          onDrop={(e) => dropHandler(e, card)}
-          draggable={true}
-          className={'card'}>
-          {card.text}
+          onDrop={(e) => dropCardHandler(e, board)}>
+          <div className="board__title">{board.title}</div>
+          {board.items.map((item) => (
+            <div
+              onDragStart={(e) => dragStartHandler(e, board, item)}
+              onDragLeave={(e) => dragLeaveHandler(e)}
+              onDragEnd={(e) => dragEndHandler(e)}
+              onDragOver={(e) => dragOverHandler(e)}
+              // onDrop={(e) => dropHandler(e, board, item)}
+              draggable={true}
+              className="item">
+              {item.title}
+              {board.id === 2 && <button className="">Таймер</button>}
+              {board.id === 3 && <button className="">Удалить</button>}
+            </div>
+          ))}
+          {board.id === 1 && (
+            <div className="add">
+              <input></input>
+              <button>Добавить</button>
+            </div>
+          )}
         </div>
       ))}
     </div>
